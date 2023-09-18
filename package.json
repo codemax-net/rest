@@ -1,5 +1,5 @@
 {
-  "name": "@codemax/jpath",
+  "name": "@codemax/rest",
   "version": "1.0.0",
   "description": "json based REST services",
   "main": "rest.js",
