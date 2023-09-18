@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const restApiInit=require('./rest.js');
+const restApiInit=require("@codemax/jpath");
 const jpath=require('jpath');
 const express=require('express');
 const app=express();
