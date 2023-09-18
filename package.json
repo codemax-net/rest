@@ -1,0 +1,23 @@
+{
+  "name": "jsl-rest",
+  "version": "1.0.0",
+  "description": "json based REST services",
+  "main": "rest.js",
+  "scripts": {
+    "test": "node ./rest.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://s3.codemax.net/metaxas/rest.git"
+  },
+  "author": "G. Metaxas",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "jpath": "git+https://s3.codemax.net/metaxas/jpath.git"
+  },
+  "devDependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

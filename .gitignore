@@ -1,0 +1,6 @@
+dev/
+node_modules/
+.cache/
+.temp/
+*.bak
+*.back
