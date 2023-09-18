@@ -138,7 +138,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					writeStatusAndHeaders(res,200,{'content-type':'application/json'}).end();	
 				}else{
 					if(query){
-						console.log(query);
+						//console.log(query);
 						res.send(Object.values(dest).filter(jpath.valueFilter(query)));
 					}else{
 						res.send(dest);	
@@ -221,7 +221,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			writeStatusAndHeaders(res,415, 'Unsupported Media Type',{'accept': 'application/json'}).end();	
 		}else{
 			try{
-				console.log('PUT',{dest,last,body:req.body});
+				//console.log('PUT',{dest,last,body:req.body});
 				const statusCode=Object.hasOwn(dest,last)?200:201;			
 				backup();
 				try{
