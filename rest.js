@@ -27,7 +27,7 @@
 */
 
 const express = require('express');
-const jpath = require('jpath');
+const jpath = require('@codemax/jpath');
 
 /**
 	workarround for google cloud balancer/nginx bug(?) of stripping away the response status phrase

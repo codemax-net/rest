@@ -2,8 +2,8 @@ import fetch from 'node-fetch';
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const restApiInit=require("@codemax/jpath");
-const jpath=require('jpath');
+const restApiInit=require("./rest.js");
+const jpath=require('@codemax/jpath');
 const express=require('express');
 const app=express();
 app.use(express.text({limit: '50kb', type:'text/*'})); // for parsing text/plain 
