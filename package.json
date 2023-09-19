@@ -15,7 +15,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "@codemax/jpath": "git+https://github.com/codemax-net/rest.git/jpath.git"
+    "@codemax/jpath": "git+https://github.com/codemax-net/jpath.git"
   },
   "devDependencies": {
     "node-fetch": "^3.3.2"
