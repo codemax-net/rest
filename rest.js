@@ -198,18 +198,19 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				with the state defined by the representation enclosed in the request message content. 
 			
 		*/
-		const {path,query}=getPathAndQuery(req);
+		const {path,query}=getPathAndQuery(req);		
 		//convert the path to a designator so that we can set dest[last]=req
 		const last = path.pop();
 		//"target resource be created or replaced..." thus if root[resName] doesn't exist we created it.
 		const dest = last && path.reduce( (root,resName)=>root && resName && (root[resName]||={}),dataset);
 		//the designator is dest[last] ;-)
 		logRequest(req,{path,query,dest,last});		
+		const replaceDataset=!rootPath && !last && !dest && !query && !path.length;
 		if(query){
 			writeStatusAndHeaders(res,400, 'Bad request').end();
 			return;
 		}else
-		if(!dest){//404 Not Found
+		if(!dest && !replaceDataset){//404 Not Found
 			writeStatusAndHeaders(res,404, 'Not Found').end();
 		}else
 		if(!req.accepts('application/json')){//406 Not Acceptable, say to the client we can only respond with application/json
@@ -222,13 +223,17 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		}else{
 			try{
 				//console.log('PUT',{dest,last,body:req.body});
-				const statusCode=Object.hasOwn(dest,last)?200:201;			
+				const statusCode=(dest && Object.hasOwn(dest,last))?200:201;			
 				backup();
 				try{
-					dest[last]=req.body;
+					if(replaceDataset){
+						dataset=req.body;
+					}else{
+						dest[last]=req.body;
+					};
 					validate('invalid data');
 					await save();
-					res.status(statusCode).json(dest[last]);//return dest[last] because validate might change the data
+					res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
 				}catch(error){
 					await recover(error,res);
 				}
