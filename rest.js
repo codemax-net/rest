@@ -79,11 +79,11 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		};
 		return dataset;
 	};
-	const save=async function(){/**
+	const save=async function(metadata=undefined){/**
 			Attempts to save the data to the file storage.
 			*note the fileStorage is responsible to raise an error with code 412 if the file was modified by another process
 		*/
-		await fileStorage.saveData(JSON.stringify(dataset));
+		await fileStorage.saveData(JSON.stringify(dataset),true,metadata);
 	};
 	const backup=function(){/**
 			make a structured clone of the dataset, so that we can recover in case of an error during a transaction(CRUD operation)
@@ -113,6 +113,14 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			temp.map(e=>[e[0], Array.isArray(e[1])?jpath.either(...e[1]):e[1] ])
 		)
 	});
+	
+	const getMetadata=(req)=>{
+		const metadata={method:req.method,path:req.path};
+		const queryStr=JSON.stringify(req.query);
+		metadata.query=queryStr.length>2?queryStr:'';
+		metadata.user=req.user?req.user.id:'';
+		return metadata;
+	}
 	
 	//REST methods
 	const router=express.Router();
@@ -182,7 +190,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					};
 				}while((dest!=undefined) && (last!=undefined));	
 				validate('invalid data');				
-				await save();
+				await save(getMetadata(req));
 				writeStatusAndHeaders(res,204).end();
 			}catch(error){
 				await recover(error,res);
@@ -232,7 +240,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 						dest[last]=req.body;
 					};
 					validate('invalid data');
-					await save();
+					await save(getMetadata(req));
 					res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
 				}catch(error){
 					await recover(error,res);
@@ -291,7 +299,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 						dest[req.body.id]=req.body;
 					};
 					validate('invalid data');
-					await save();
+					await save(getMetadata(req));
 					res.status(201).json(dest[req.body.id]);//return dest[req.body.id] instead of req.body, because the validation might change the data (who knows...)
 				}catch(error){
 					await recover(error,res);
@@ -335,7 +343,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 						Object.assign(dest,req.body);
 					};
 					validate('invalid data');
-					await save();
+					await save(getMetadata(req));
 					res.status(200).json(items||dest);//return the affected item(s) after the patch
 				}catch(error){
 					await recover(error,res);
@@ -393,7 +401,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					};
 					delete dest[last];
 					validate('invalid data');
-					await save();
+					await save(getMetadata(req));
 					res.status(200).json(dest[newId]);
 				}catch(error){
 					await recover(error,res);
