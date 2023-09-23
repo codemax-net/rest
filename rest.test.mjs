@@ -1,3 +1,25 @@
+/**
+* 	Generic JSON rest JSL3 - extension
+*	 	
+*	version	: 1.1 
+*	author	: dr. G.Metaxas
+* 	Copyright 2020 Ambianti B.V.
+* 	
+*	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+*	associated documentation files (the "Software"), to deal in the Software without restriction, 
+*	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+*	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+*	subject to the following conditions:
+*	
+*	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+*	
+*	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+*	INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+*	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+*	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+*	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*	
+*/
 import fetch from 'node-fetch';
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -73,18 +95,11 @@ const colors_json={
 		"hsl":[240,100,50]
 	}
 };
-const colors_store={//storage
-	loadData:async function(){
-		return (this.data||=JSON.stringify(colors_json));
-	},
-	saveData:async function(data){
-		//console.log('saving data',data);
-		this.data=data;
-	},
-	name:'colors.json'
-};	
+
+const storage=require('./storage/memory-storage.js')('colors.json',JSON.stringify(colors_json));
+
 const initTestDatasetAPI=async function(){
-	return await restApiInit(colors_store,{//data format
+	return await restApiInit(storage,{//data format
 		'*':{
 			id	:jpath.ID(),
 			hex	:/^\#[0-9a-f]{6}$/,
@@ -143,19 +158,19 @@ await asyncAssertFalse('Testing POST',async function(){
 		headers	:{'Content-Type': 'application/json','Accept': 'application/json'},
 		body	:JSON.stringify(yellow)
 	}).then(res=>res.json());
-	const colors=JSON.parse(colors_store.data);
+	const colors=JSON.parse(await storage.loadData());
 	return jpath.valueTest(colors.yellow)(yellow);
 });
 
 //
 await asyncAssertTrue('Testing DELETE',async function(){	
-	console.log(colors_store);
+	console.log(storage);
 	const response=await fetch( `http://localhost:3030/colors/yellow` ,{method:'DELETE'});
 	console.log(response.status,response.statusText);
 	if(!response.status==204){
 		return false;
 	};
-	const colors=JSON.parse(colors_store.data);
+	const colors=JSON.parse(await storage.loadData());
 	return colors.yellow===undefined;
 });
 
@@ -173,7 +188,7 @@ await asyncAssertFalse('Testing PATCH',async function(){
 	});
 	if(res.ok){
 		const result=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(result);
 		return jpath.all(colors.red,patch)(result);
 	}else{
@@ -194,7 +209,7 @@ await asyncAssertFalse('Testing PATCH with filter',async function(){
 	});
 	if(res.ok){
 		const result=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(result);
 		return jpath.all([colors.red,colors.green],[,,patch])(result);	
 	}else{
@@ -212,7 +227,7 @@ await asyncAssertTrue('Testing MOVE with json',async function(){
 	});
 	if(res.ok){
 		const entity=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(entity);
 		return colors.green || jpath.all(colors.lime,{id:'lime'})(entity);		
 	}else{
@@ -227,7 +242,7 @@ await asyncAssertFalse('Testing MOVE with json',async function(){
 	});
 	if(res.ok){
 		const entity=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(entity);
 		return colors.green || jpath.all(colors.lime,{id:'lime'})(entity);		
 	}else{
@@ -247,7 +262,7 @@ await asyncAssertFalse('Testing MOVE with plain text',async function(){
 	//console.log(res);
 	if(res.ok){
 		const entity=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(entity);
 		return colors.lime || jpath.all(colors.green,{id:'green'})(entity);		
 	}else{
@@ -264,7 +279,7 @@ await asyncAssertTrue('Testing MOVE with plain text',async function(){
 	//console.log(res);
 	if(res.ok){
 		const entity=await res.json();
-		const colors=JSON.parse(colors_store.data);
+		const colors=JSON.parse(await storage.loadData());
 		console.log(entity);
 		return colors.lime || jpath.all(colors.green,{id:'green'})(entity);		
 	}else{
