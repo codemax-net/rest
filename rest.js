@@ -203,7 +203,6 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
     
     const parsePrefersHeader=(prefers)=>Object.fromEntries((prefers||'').split(/,\s*/).map(p=>p.split(/=\s*/)).filter(x=>x[0]));
     const reqPrefersMinimal=(req,prefers=req.get('prefer'))=>{
-        console.log('>>>>>>',parsePrefersHeader(prefers));
         return prefers && (parsePrefersHeader(prefers).return=='minimal')
     };
     
@@ -251,7 +250,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
                     //rfc7240 
                     if(reqPrefersMinimal(req)){
                         //send 204
-                        writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
+                        writeStatusAndHeaders(res,204,'no content',{'Preference-Applied':'return=minimal','Location':req.originalUrl}).end();
                     }else{//assume representation is requested
 					   res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
                     };
@@ -378,7 +377,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
                     //rfc7240 
                     if(reqPrefersMinimal(req)){
                         //send 204
-                        writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
+                        writeStatusAndHeaders(res,204,'no content',{'Preference-Applied':'return=minimal','Location':req.originalUrl}).end();
                     }else{
                         //assume representation is required
                         res.status(200).json(items||dest);//return the affected item(s) after the patch
