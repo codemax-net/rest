@@ -217,6 +217,26 @@ await asyncAssertFalse('Testing PATCH with filter',async function(){
 	};
 });
 
+await asyncAssertFalse('Testing PATCH with multiple items',async function(){	
+	const patch={
+		'green':{rating:20},
+		'red'  :{rating:10},
+		'blue' :{rating:15}
+	};
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json'},
+		body	:JSON.stringify(patch)
+	});
+	if(res.ok){
+		const result=await res.json();
+		const colors=JSON.parse(await storage.loadData());
+		console.log(result);
+		return jpath.all(colors,patch)(result);
+	}else{
+		return res.message||(res.status + ' ' + res.statusText);
+	};
+});
 //
 await asyncAssertTrue('Testing MOVE with json',async function(){	
 	//should return 409 because red exists

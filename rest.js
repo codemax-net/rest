@@ -310,6 +310,18 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			}	
 		}
 	});
+	
+	const patchObjectProps=(obj,props)=>{
+		for(let k in props){
+			const p=props[k],q=obj[k];
+			if(p && q && (typeof p == 'object') && (typeof q== 'object')){
+				patchObjectProps(q,p);
+			}else{
+				obj[k]=p;
+			};
+		}
+	};
+	
 	router.patch('*',async function patch(req,res){/**
 			patches one or more items
 			when no query string is provided a single item identified solely by the url path is patched,
@@ -339,8 +351,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				try{
 					if(items){//we are patching multiple of items 
 						items.forEach(item=>Object.assign(item,req.body));
-					}else{//we are patching an object
-						Object.assign(dest,req.body);
+					}else{//we are patching the destination object
+						//Object.assign(dest,req.body);
+						patchObjectProps(dest,req.body);
 					};
 					validate('invalid data');
 					await save(getMetadata(req));
