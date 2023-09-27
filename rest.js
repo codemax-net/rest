@@ -316,7 +316,10 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			const p=props[k],q=obj[k];
 			if(p && q && (typeof p == 'object') && (typeof q== 'object')){
 				patchObjectProps(q,p);
-			}else{
+			}else
+            if(p==null){
+                delete obj[k];
+            }else{
 				obj[k]=p;
 			};
 		}
