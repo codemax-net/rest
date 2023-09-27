@@ -151,10 +151,10 @@ await asyncAssertTrue('Testing PUT',async function(){
 });	
 
 //
-await asyncAssertFalse('Testing PUT with req header return=minimal',async function(){	
+await asyncAssertFalse('Testing PUT with Prefer header, return=minimal',async function(){	
 	const response=await fetch( `http://localhost:3030/colors/red/description` ,{
 		method	:'PUT',
-		headers	:{'Content-Type': 'text/plain','Return': 'minimal'},
+		headers	:{'Content-Type': 'text/plain','Prefer': 'return=minimal,foo,bar'},
 		body	:'very nice color'	
 	});
     return jpath.valueTest({
@@ -254,7 +254,7 @@ await asyncAssertFalse('Testing PATCH with multiple items',async function(){
 	};
 });
 
-await asyncAssertFalse('Testing PATCH with request header return=minimal',async function(){	
+await asyncAssertFalse('Testing PATCH with request Prefer header return=minimal',async function(){	
 	const patch={
 		'green':{rating:20},
 		'red'  :{rating:10},
@@ -262,7 +262,7 @@ await asyncAssertFalse('Testing PATCH with request header return=minimal',async 
 	};
 	const res=await fetch( `http://localhost:3030/colors` ,{
 		method	:'PATCH',
-		headers	:{'Content-Type': 'application/json','return':'minimal'},
+		headers	:{'Content-Type': 'application/json','Prefer': 'return=minimal,foo,bar'},
 		body	:JSON.stringify(patch)
 	});
 	if(res.ok){

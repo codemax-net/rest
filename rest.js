@@ -200,6 +200,13 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			writeStatusAndHeaders(res,500, error.message).end();//we assume that authorized users can see error.message		
 		}
 	});
+    
+    const parsePrefersHeader=(prefers)=>Object.fromEntries((prefers||'').split(/,\s*/).map(p=>p.split(/=\s*/)).filter(x=>x[0]));
+    const reqPrefersMinimal=(req,prefers=req.get('prefer'))=>{
+        console.log('>>>>>>',parsePrefersHeader(prefers));
+        return prefers && (parsePrefersHeader(prefers).return=='minimal')
+    };
+    
 	router.put('*',async function put(req,res){/**
 			As defined in the rfc https://www.rfc-editor.org/rfc/rfc9110#section-9.3.4 
 				The PUT method requests that the state of the target resource be created or replaced 
@@ -242,7 +249,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					validate('invalid data');
 					await save(getMetadata(req));
                     //rfc7240 
-                    if(req.get('return')=='minimal'){
+                    if(reqPrefersMinimal(req)){
                         //send 204
                         writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
                     }else{//assume representation is requested
@@ -257,6 +264,8 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			}
 		};
 	});
+    
+    
 	router.post('*',async function post(req,res){/**
 		As defined in https://www.rfc-editor.org/rfc/rfc9110#section-9.3.3
 		The POST method requests that the target resource process the representation enclosed in the request according to the resource's own specific semantics. 
@@ -367,7 +376,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					validate('invalid data');
 					await save(getMetadata(req));
                     //rfc7240 
-                    if(req.get('return')=='minimal'){
+                    if(reqPrefersMinimal(req)){
                         //send 204
                         writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
                     }else{
