@@ -151,6 +151,22 @@ await asyncAssertTrue('Testing PUT',async function(){
 });	
 
 //
+await asyncAssertFalse('Testing PUT with req header return=minimal',async function(){	
+	const response=await fetch( `http://localhost:3030/colors/red/description` ,{
+		method	:'PUT',
+		headers	:{'Content-Type': 'text/plain','Return': 'minimal'},
+		body	:'very nice color'	
+	});
+    return jpath.valueTest({
+        status:204,
+        location:'/colors/red/description',
+    })({
+        status:response.status,
+        location:response.headers.get('location'),
+    });
+});	
+
+//
 await asyncAssertFalse('Testing POST',async function(){	
 	const yellow={id:'yellow',hex:'#ffff00',rgb:[255,255,0],hsl:[60,100,50]};
 	const response=await fetch( `http://localhost:3030/colors` ,{
@@ -237,6 +253,29 @@ await asyncAssertFalse('Testing PATCH with multiple items',async function(){
 		return res.message||(res.status + ' ' + res.statusText);
 	};
 });
+
+await asyncAssertFalse('Testing PATCH with request header return=minimal',async function(){	
+	const patch={
+		'green':{rating:20},
+		'red'  :{rating:10},
+		'blue' :{rating:15}
+	};
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','return':'minimal'},
+		body	:JSON.stringify(patch)
+	});
+	if(res.ok){
+        const url=`http://localhost:3030${res.headers.get('location')}`;
+		const result=await fetch(url).then(res=>res.json());
+		const colors=JSON.parse(await storage.loadData());
+		console.log(result);
+		return jpath.all(colors,patch)(result);
+	}else{
+		return res.message||(res.status + ' ' + res.statusText);
+	};
+});
+
 
 await asyncAssertFalse('Testing PATCH with multiple items(delete properties)',async function(){	
 	const patch={

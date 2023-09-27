@@ -241,7 +241,13 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					};
 					validate('invalid data');
 					await save(getMetadata(req));
-					res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
+                    //rfc7240 
+                    if(req.get('return')=='minimal'){
+                        //send 204
+                        writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
+                    }else{//assume representation is requested
+					   res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
+                    };
 				}catch(error){
 					await recover(error,res);
 				}
@@ -360,7 +366,14 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					};
 					validate('invalid data');
 					await save(getMetadata(req));
-					res.status(200).json(items||dest);//return the affected item(s) after the patch
+                    //rfc7240 
+                    if(req.get('return')=='minimal'){
+                        //send 204
+                        writeStatusAndHeaders(res,204,'no content',{'location':req.originalUrl}).end();
+                    }else{
+                        //assume representation is required
+                        res.status(200).json(items||dest);//return the affected item(s) after the patch
+                    };
 				}catch(error){
 					await recover(error,res);
 				}
