@@ -115,7 +115,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	});
 	
 	const getMetadata=(req)=>{
-		const metadata={method:req.method,path:req.path};
+		const metadata={method:req.method,path:req.path,title:req.get('x-crud-title')};
 		const queryStr=JSON.stringify(req.query);
 		metadata.query=queryStr.length>2?queryStr:'';
 		metadata.user=req.user?req.user.id:'';
