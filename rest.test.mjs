@@ -373,4 +373,112 @@ await asyncAssertTrue('Testing MOVE with plain text',async function(){
 	};	
 });
 
+
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'POST',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()-1000).toGMTString()},
+		body	:JSON.stringify({
+			"id" :"orange",
+			"hex":"#ffa500",
+			"rgb":[255,170,0],
+			"hsl":[40,100,50]
+		})
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.status==412;
+});
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'POST',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()+1000).toGMTString()},
+		body	:JSON.stringify({
+			"id" :"orange",
+			"hex":"#ffa500",
+			"rgb":[255,170,0],
+			"hsl":[40,100,50]
+		})
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.ok;
+});
+
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()-1000).toGMTString()},
+		body	:JSON.stringify({
+			description:"nice orange"
+		})
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.status==412;
+});
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()+1000).toGMTString()},
+		body	:JSON.stringify({
+			description:"nice orange"
+		})
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.ok;
+});
+
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange/hex` ,{
+		method	:'PUT',
+		headers	:{'Content-Type': 'text/plain','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()-1000).toGMTString()},
+		body	:"#ffaa00"
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.status==412;
+});
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange/hex` ,{
+		method	:'PUT',
+		headers	:{'Content-Type': 'text/plain','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()+1000).toGMTString()},
+		body	:"#ffaa00"
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.ok;
+});
+
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'MOVE',
+		headers	:{'Content-Type': 'text/plain','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()-1000).toGMTString()},
+		body	:"oranje"
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.status==412;
+});
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'MOVE',
+		headers	:{'Content-Type': 'text/plain','Accept': 'application/json','If-Unmodified-Since':new Date(Date.now()+1000).toGMTString()},
+		body	:"oranje"
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.ok;
+});
+
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'DELETE',
+		headers	:{'If-Unmodified-Since':new Date(Date.now()-1000).toGMTString()},
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.status==412;
+});
+await asyncAssertTrue('Testing if-unmodified-since',async function(){	
+	const res=await fetch( `http://localhost:3030/colors/orange` ,{
+		method	:'DELETE',
+		headers	:{'If-Unmodified-Since':new Date(Date.now()+1000).toGMTString()},
+	});
+	console.log(res.message||(res.status + ' ' + res.statusText));
+	return res.ok;
+});
+
 process.exit(0);

@@ -30,22 +30,35 @@ const express = require('express');
 const jpath = require('@codemax/jpath');
 
 /**
+	function writeStatusAndHeaders(res,code[,phrase][,headers])
+	
 	workarround for google cloud balancer/nginx bug(?) of stripping away the response status phrase
 		we set also a dedicated x header (x-status-phrase) with the status-phrase so that we can safely pass the message to the client
+	@param res	<Response>:response object
+	@param code	<number>: It accepts the status codes that are of number type.
+	@param phrase	<string>: It accepts any string that shows the status message.
+	@param headers <Object>: It accepts any function, array, or string.	
+	@return the response object
 */
 const writeStatusAndHeaders=(res,code,phrase,headers)=>{
 	//console.log(code,typeof phrase);
 	if(typeof phrase == 'string'){
 		headers=Object.assign({},headers,{'x-status-phrase':phrase})
 	};
+	/*
+		when phrase is an object and headers is undefined, writeHead treats the phrase as object, 
+		so we can still say writeStatusAndHeaders(res,200,{myheader:'myvalue'})
+	*/
 	res.writeHead(code,phrase,headers);
 	return res;
-}
+};
+
 const logRequest=(req,...rest)=>{
 	return;
 	console.log({method:req.method,url:req.url,path:req.path,params:req.params,query:req.query,originalUrl:req.originalUrl});
 	console.log(...rest);
-}
+};
+
 
 const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath){/**
 		Generates a REST service based on the provided file storage, data set, and validator.
@@ -54,8 +67,26 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		@param datasetValidator	Validator function of the form (value)=>dataOk?0:'error string' , or alternatively a jpath value test pattern		
 		@return an object(not an express router) which implements the CRUD REST operations based on the provided dataset
 	*/
+	const err412=(req)=>`The storage of "${req.path}" was modified by another user. Refresh and try again.`;
 	var backupDataset=structuredClone(dataset);
-	//internal utility functions
+	var lastModified=({//Locally maintained modification timestamp
+		update(){
+			this.value=new Date();
+			this.value.setMilliseconds(0);
+			this.header={'Last-Modified':this.value.toGMTString()};
+			return this;
+		},
+		validate(req,res){
+			const h=req.get('If-Unmodified-Since');
+			if(h && lastModified.value && (new Date(h) < lastModified.value)){
+				writeStatusAndHeaders(res,412, err412(req)).end();
+				return true;
+			}else{
+				return false;
+			}	
+		}
+	}).update();
+	
 	const validate=function(throwError){/**
 			Validates the currest state of the dataset, 
 			@param throwError when true raise an error if the datasetValidator finds the dataset invalid
@@ -84,13 +115,14 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			*note the fileStorage is responsible to raise an error with code 412 if the file was modified by another process
 		*/
 		await fileStorage.saveData(JSON.stringify(dataset),true,metadata);
+		lastModified.update();
 	};
 	const backup=function(){/**
 			make a structured clone of the dataset, so that we can recover in case of an error during a transaction(CRUD operation)
 		*/
 		backupDataset=structuredClone(dataset);
 	};
-	const recover=async function(error,res){/**
+	const recover=async function(error,req,res){/**
 			Used internally to recover from an error after an unsuccesful transaction(CRUD operation).
 				-In the special case that the error is a 412 (i.e. the file version was modified by another process/service)
 					we reload the data from the fileStorage
@@ -100,7 +132,8 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		console.log('recovering from error:',error.code,error.message);		
 		if(error.code==412){//precondition failed, aka the file was modified by another process
 			await load();
-			writeStatusAndHeaders(res,412,error.message).end();
+			//writeStatusAndHeaders(res,412,error.message).end();
+			writeStatusAndHeaders(res,412,err412(req)).end();
 		}else{//data validation conflict
 			dataset=backupDataset;
 			writeStatusAndHeaders(res,409,error.message).end();
@@ -143,13 +176,13 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		}else{
 			try{
 				if(req.method=='HEAD'){
-					writeStatusAndHeaders(res,200,{'content-type':'application/json'}).end();	
+					writeStatusAndHeaders(res,200,Object.assign({'content-type':'application/json'},lastModified.header)).end();	
 				}else{
 					if(query){
 						//console.log(query);
-						res.send(Object.values(dest).filter(jpath.valueFilter(query)));
+						res.set(lastModified.header).json(Object.values(dest).filter(jpath.valueFilter(query)));
 					}else{
-						res.send(dest);	
+						res.set(lastModified.header).json(dest);	
 					}					
 				};
 			}catch(error){
@@ -176,6 +209,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		if(!dest){
 			writeStatusAndHeaders(res,404, 'Not Found').end();
 			return;
+		}else
+		if(lastModified.validate(req,res)){
+			return;
 		};
 		try{
 			backup();
@@ -191,9 +227,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				}while((dest!=undefined) && (last!=undefined));	
 				validate('invalid data');				
 				await save(getMetadata(req));
-				writeStatusAndHeaders(res,204).end();
+				writeStatusAndHeaders(res,204,lastModified.header).end();
 			}catch(error){
-				await recover(error,res);
+				await recover(error,req,res);
 			}
 		}catch(error){
 			console.log(error);
@@ -234,6 +270,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		}else
 		if(!(req.is('text/plain') || req.is('application/json'))){//415 Unsupported Media Type
 			writeStatusAndHeaders(res,415, 'Unsupported Media Type',{'accept': 'application/json'}).end();	
+		}else
+		if(lastModified.validate(req,res)){
+			return;
 		}else{
 			try{
 				//console.log('PUT',{dest,last,body:req.body});
@@ -250,12 +289,15 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
                     //rfc7240 
                     if(reqPrefersMinimal(req)){
                         //send 204
-                        writeStatusAndHeaders(res,204,'no content',{'Preference-Applied':'return=minimal','Location':req.originalUrl}).end();
+                        writeStatusAndHeaders(res,204,Object.assign({
+								'Preference-Applied':'return=minimal',
+								'Location'		:req.originalUrl,								
+						},lastModified.header)).end();
                     }else{//assume representation is requested
-					   res.status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
+					   res.set(lastModified.header).status(statusCode).json(replaceDataset?dataset:dest[last]);//return dest[last] because validate might change the data
                     };
 				}catch(error){
-					await recover(error,res);
+					await recover(error,req,res);
 				}
 			}catch(error){
 				console.log(error);
@@ -291,6 +333,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		}else
 		if(!(req.is('text/plain') || req.is('application/json'))){//415 Unsupported Media Type
 			writeStatusAndHeaders(res,415, 'Unsupported Media Type',{'accept': 'application/json'}).end();	
+		}else
+		if(lastModified.validate(req,res)){
+			return;
 		}else{
 			if(!Array.isArray(dest)){//405 Method Not Allowed
 				if(!Object.hasOwn(req.body,'id')){//409 Conflict
@@ -314,9 +359,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					};
 					validate('invalid data');
 					await save(getMetadata(req));
-					res.status(201).json(dest[req.body.id]);//return dest[req.body.id] instead of req.body, because the validation might change the data (who knows...)
+					res.set(lastModified.header).status(201).json(dest[req.body.id]);//return dest[req.body.id] instead of req.body, because the validation might change the data (who knows...)
 				}catch(error){
-					await recover(error,res);
+					await recover(error,req,res);
 				}
 			}catch(error){
 				console.log(error);
@@ -360,6 +405,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		}else
 		if(!(req.is('text/plain') || req.is('application/json'))){//415 Unsupported Media Type
 			writeStatusAndHeaders(res,415, 'Unsupported Media Type',{'accept': 'application/json'}).end();	
+		}else
+		if(lastModified.validate(req,res)){
+			return;
 		}else{
 			//console.log('patch',req.query);
 			try{
@@ -377,13 +425,16 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
                     //rfc7240 
                     if(reqPrefersMinimal(req)){
                         //send 204
-                        writeStatusAndHeaders(res,204,'no content',{'Preference-Applied':'return=minimal','Location':req.originalUrl}).end();
+                        writeStatusAndHeaders(res,204,Object.assign({
+							'Preference-Applied':'return=minimal',
+							'Location':req.originalUrl,
+						},lastModified.header)).end();
                     }else{
                         //assume representation is required
-                        res.status(200).json(items||dest);//return the affected item(s) after the patch
+                        res.set(lastModified.header).status(200).json(items||dest);//return the affected item(s) after the patch
                     };
 				}catch(error){
-					await recover(error,res);
+					await recover(error,req,res);
 				}
 			}catch(error){
 				console.log(error);
@@ -412,6 +463,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		if(!(req.is('text/plain') || req.is('application/json'))){//415 Unsupported Media Type
 			writeStatusAndHeaders(res,415, 'Unsupported Media Type',{'accept': 'application/json;text/plain'});
 			res.end();	
+		}else
+		if(lastModified.validate(req,res)){
+			return;
 		}else{
 			const newId=(typeof req.body == 'string')?req.body:req.body.id;
 			if(!newId){//409 Conflict
@@ -439,9 +493,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 					delete dest[last];
 					validate('invalid data');
 					await save(getMetadata(req));
-					res.status(200).json(dest[newId]);
+					res.set(lastModified.header).status(200).json(dest[newId]);
 				}catch(error){
-					await recover(error,res);
+					await recover(error,req,res);
 				}
 			}catch(error){
 				console.log(error);
