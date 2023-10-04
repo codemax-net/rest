@@ -373,7 +373,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	const patchObjectProps=(obj,props)=>{
 		for(let k in props){
 			const p=props[k],q=obj[k];
-			if(p && q && (typeof p == 'object') && (typeof q== 'object')){
+			if(p && q && (typeof p == 'object') && (typeof q== 'object') && !Array.isArray(p)){
 				patchObjectProps(q,p);
 			}else
             if(p==null){

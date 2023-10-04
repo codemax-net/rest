@@ -302,6 +302,52 @@ await asyncAssertFalse('Testing PATCH with multiple items(delete properties)',as
 	};
 });
 
+await asyncAssertFalse('Testing PATCH with array items(as per rfc7386)',async function(){	
+	const patch={
+		'green':{ratings:[10,20,30]},
+		'red'  :{ratings:[11,21,31]},
+		'blue' :{ratings:[12,22,32]}
+	};
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json'},
+		body	:JSON.stringify(patch)
+	});
+	if(res.ok){
+		const result=await res.json();
+		const colors=JSON.parse(await storage.loadData());
+		console.log(result);
+		return jpath.all(colors,patch)(result);
+	}else{
+		return res.message||(res.status + ' ' + res.statusText);
+	};
+});
+
+await asyncAssertFalse('Testing PATCH with array items(as per rfc7386)',async function(){	
+	const patch={
+		'green':{ratings:[110,120]},
+		'red'  :{ratings:[111,121]},
+		'blue' :{ratings:[112,122]}
+	};
+	const res=await fetch( `http://localhost:3030/colors` ,{
+		method	:'PATCH',
+		headers	:{'Content-Type': 'application/json','Accept': 'application/json'},
+		body	:JSON.stringify(patch)
+	});
+	if(res.ok){
+		const result=await res.json();
+		const colors=JSON.parse(await storage.loadData());
+		console.log(result);
+		return jpath.all(colors,{
+		'green':{ratings:jpath.limit([110,120],2)},
+		'red'  :{ratings:jpath.limit([111,121],2)},
+		'blue' :{ratings:jpath.limit([112,122],2)}
+	})(result);
+	}else{
+		return res.message||(res.status + ' ' + res.statusText);
+	};
+});
+
 
 //
 await asyncAssertTrue('Testing MOVE with json',async function(){	
