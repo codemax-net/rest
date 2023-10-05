@@ -143,7 +143,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	const getPathAndQuery=(req,temp)=>({
 		path :((rootPath||'')+(req.path=='/'?'':req.path)).split('/').filter((x,i)=>i||x).map(x=>decodeURIComponent(x)),
 		query:!(temp=Object.entries(req.query)).length?null:Object.fromEntries(
-			temp.map(e=>[e[0], Array.isArray(e[1])?jpath.either(...e[1]):e[1] ])
+			temp.map(e=>[e[0], Array.isArray(e[1])?jpath.either(...e[1]): (e[1]==''?true:isNaN(e[1])||(typeof e[1]=='boolean')?e[1]:+e[1]) ])
 		)
 	});
 	
