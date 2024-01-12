@@ -178,12 +178,13 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				if(req.method=='HEAD'){
 					writeStatusAndHeaders(res,200,Object.assign({'content-type':'application/json'},lastModified.header)).end();	
 				}else{
+					const ret=Array.isArray(dest)?dest.filter(x=>x!==null):dest;
 					if(query){
 						//console.log(query);
-						res.set(lastModified.header).json(Object.values(dest).filter(jpath.valueFilter(query)));
+						res.set(lastModified.header).json(Object.values(ret).filter(jpath.valueFilter(query)));
 					}else{
-						res.set(lastModified.header).json(dest);	
-					}					
+						res.set(lastModified.header).json(ret);	
+					};					
 				};
 			}catch(error){
 				console.log(error);

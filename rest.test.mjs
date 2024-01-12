@@ -112,6 +112,18 @@ const initTestDatasetAPI=async function(){
 const colorAPI=await initTestDatasetAPI();
 app.use('/colors',colorAPI);
 
+const array_json=[{name:"alpha"},{name:"beta"},{name:"gamma"}];
+const arrayAPI=await restApiInit(
+	require('./storage/memory-storage.js')('list.json',JSON.stringify(array_json)),
+	[,,
+	jpath.either(undefined,null,{
+		id	:jpath.ID(),
+		name:String
+	})
+]);
+app.use('/list',arrayAPI);
+
+
 app.listen(3030);
 console.log('Testing API');
 
@@ -526,5 +538,20 @@ await asyncAssertTrue('Testing if-unmodified-since',async function(){
 	console.log(res.message||(res.status + ' ' + res.statusText));
 	return res.ok;
 });
+
+
+await asyncAssertFalse('Testing array get',async function(){	
+	const res=await fetch( `http://localhost:3030/list/`).then(res=>res.json());
+	return jpath.valueTest(array_json)(res);
+});
+
+await asyncAssertFalse('Testing array delete',async function(){	
+	await fetch(`http://localhost:3030/list/0`,{method:'DELETE'});
+	await fetch(`http://localhost:3030/list/2`,{method:'DELETE'});
+	const res=await fetch( `http://localhost:3030/list/`).then(res=>res.json());
+	console.log(res);
+	return jpath.valueTest(array_json.filter((x,i)=>i==1))(res);
+});
+
 
 process.exit(0);
