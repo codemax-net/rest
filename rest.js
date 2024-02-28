@@ -518,7 +518,7 @@ module.exports=async function(fileStorage,datasetValidator,rootPath=''){/**
 		@return returns the REST service for the dataset
 	*/
 	datasetValidator=jpath.valueTest(datasetValidator);//if the provided datasetValidator is a function then keep it, otherwise treat it as a jpath value test
-	const dataset=JSON.parse(await fileStorage.loadData());		
+	const dataset=JSON.parse(await fileStorage.loadData()||null);		
 	const error=datasetValidator(dataset);
 	if(!error){
 		console.log('dataset',fileStorage.name,'contains valid data');
