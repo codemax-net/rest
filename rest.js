@@ -29,6 +29,25 @@
 const express = require('express');
 const jpath = require('@codemax/jpath');
 
+
+/**
+	notice. mod 2024/03/20
+	before the mod 
+		'get' 		on arrays would return the not null array items  i.e. ret=dest.filter(x=>x!==null)
+		'delete'	on arrays would use the delete statement on the array making an empty slot in the array 
+						this would preserve the item indeces
+						however since 'get' would return the not-null items, the index preservation is useless
+						furthermore in combination with jpath, one would have to define the array member not just as 
+							[,,pattern] but as [,,jpath.either(undefined,null,pattern)] (so that jpath allows the empty slots in the array after deletion)
+
+	after the mod	
+		'get'		returns the not null array items as before (for backwards compatibility reasons)
+		'delete'	uses the array's splice method to actually delete the item (hence the item indeces are not preserved)
+					
+		
+**/
+
+
 /**
 	function writeStatusAndHeaders(res,code[,phrase][,headers])
 	
@@ -219,13 +238,19 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			backup();
 			try{
 				do{
-					delete dest[last];	
-					if(Object.keys(dest).length){
-						break;
+					if(Array.isArray(dest)){
+						dest.splice(last,1);
+						if(dest.length){
+							break;
+						}
 					}else{
-						dest=part.pop();
-						last=path.pop();
+						delete dest[last];	
+						if(Object.keys(dest).length){
+							break;
+						}
 					};
+					dest=part.pop();
+					last=path.pop();
 				}while((dest!=undefined) && (last!=undefined));	
 				validate('invalid data',req);				
 				await save(getMetadata(req));
