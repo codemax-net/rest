@@ -537,14 +537,14 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	router.save=save;
 	return router;//{validate,load,save,get,head,put,post,patch,move,delete:delete_};
 };
-	
-module.exports=async function(fileStorage,datasetValidator,rootPath=''){/**
+
+module.exports=async function(fileStorage,datasetValidator,rootPath='',initDataset=null){/**
 		@param fileStorage	a file storage abstraction as described in './storage.js'	
 		@param datasetValidator	dataset validator function of the form (value)=>dataOk?0:'error string' , or alternatively a jpath value test pattern
 		@return returns the REST service for the dataset
 	*/
 	datasetValidator=jpath.valueTest(datasetValidator);//if the provided datasetValidator is a function then keep it, otherwise treat it as a jpath value test
-	const dataset=JSON.parse(await fileStorage.loadData()||null);		
+	const dataset=JSON.parse(await fileStorage.loadData()||JSON.stringify(initDataset));		
 	const error=datasetValidator(dataset);
 	if(!error){
 		console.log('dataset',fileStorage.name,'contains valid data');
@@ -554,4 +554,4 @@ module.exports=async function(fileStorage,datasetValidator,rootPath=''){/**
 	};
 	//console.log(dataset);
 	return makeJsonRestService(fileStorage,dataset,datasetValidator,rootPath);
-}	
+}
