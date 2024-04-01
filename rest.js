@@ -378,15 +378,18 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			};			
 			try{
 				backup();
-				try{
+				try{//fix 2024-04-01, add location header
+					let location=req.baseUrl+req.path,id;
 					if(Array.isArray(dest)){
-						dest.push(req.body);	
+						id=dest.push(req.body)-1;	
+						location+='/'+id;
 					}else{
 						dest[req.body.id]=req.body;
+						location+='/'+(id=req.body.id);
 					};
 					validate('invalid data',req);
-					await save(getMetadata(req));
-					res.set(lastModified.header).status(201).json(dest[req.body.id]);//return dest[req.body.id] instead of req.body, because the validation might change the data (who knows...)
+					await save(getMetadata(req));										
+					res.set(Object.assign({location},lastModified.header)).status(201).json(dest[id]);//return dest[req.body.id] instead of req.body, because the validation might change the data (who knows...)
 				}catch(error){
 					await recover(error,req,res);
 				}
