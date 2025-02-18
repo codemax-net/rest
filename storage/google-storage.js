@@ -61,6 +61,7 @@ function getFileStorage(path){
 					file.metadata.metageneration=headers['x-goog-metageneration'];
 					file.metadata.storageClass	=headers['x-goog-storage-class'];
 					file.metadata.etag			=headers['etag'];
+					file.lastModified			=headers['last-modified'];					
 				}else
 				if(statusCode==304){
 					//console.log(file.name,'not modified');
@@ -96,6 +97,9 @@ function getFileStorage(path){
 	return ({
 			loadData,
 			saveData,
+			get lastModified(){
+				return file.lastModified;
+			},
 			get metadata(){
 				return file.metadata
 			},
