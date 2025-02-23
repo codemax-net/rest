@@ -53,7 +53,8 @@ function getFileStorage(path){
 		const stream=file.createReadStream()
 			.on('response', function(response) {
 				const {statusCode,headers}=response;
-				if(statusCode==200){
+				//console.log('loadData',file.name, {statusCode,headers});
+				if((statusCode==200)||(statusCode==304)){
 					file.metadata||={};
 					file.metadata.generation	=headers['x-goog-generation'];
 					file.metadata.contentType	=headers['content-type'];
@@ -62,10 +63,7 @@ function getFileStorage(path){
 					file.metadata.storageClass	=headers['x-goog-storage-class'];
 					file.metadata.etag			=headers['etag'];
 					file.lastModified			=headers['last-modified'];					
-				}else
-				if(statusCode==304){
-					//console.log(file.name,'not modified');
-				}
+				};
 			});
 		try{
 			const buffer=await file.getBufferFromReadable(stream);

@@ -195,6 +195,9 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			res.end();
 		}else{
 			try{
+				if(fileStorage.lastModified){
+					res.set('x-original-date',fileStorage.lastModified);
+				};
 				if(req.method=='HEAD'){
 					writeStatusAndHeaders(res,200,Object.assign({'content-type':'application/json'},lastModified.header)).end();	
 				}else{
