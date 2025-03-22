@@ -34,8 +34,8 @@ console.log('bucket in use:',process.env.GOOGLE_CLOUD_PROJECT+'.appspot.com');
 	@path 	relative file path 
 	@return Object with two methods loadData and writeData
 */
-function getFileStorage(path){
-	const file=gcsBucket.file(path);
+function getFileStorage(path,bucket=gcsBucket){
+	const file=bucket.file(path);
 	//override get to check the etag
 	const _requestStream=file.requestStream;
 	file.requestStream=function(reqOpts,...args){
