@@ -88,7 +88,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	*/
 	const err412=(req)=>`The storage of "${req.path}" was modified by another user. Refresh and try again.`;
 	var backupDataset=structuredClone(dataset);
-	var lastModified=({//Locally maintained modification timestamp
+	const lastModified=({//Locally maintained modification timestamp
 		update(){
 			this.value=new Date();
 			this.value.setMilliseconds(0);
@@ -537,10 +537,10 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			}
 		};
 	});
-	
 	router.load=load;
 	router.validate=validate;
 	router.save=save;
+	router.lastModified=lastModified;
 	return router;//{validate,load,save,get,head,put,post,patch,move,delete:delete_};
 };
 
