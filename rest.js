@@ -178,6 +178,12 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	
 	//REST methods
 	const router=express.Router();
+    
+    const parsePreferHeader=(prefer)=>Object.fromEntries((prefer||'').split(/,\s*/).map(p=>p.split(/=\s*/)).filter(x=>x[0]));
+    const reqPrefersMinimal=(req,prefer=req.get('prefer'))=>{
+        return prefer && (parsePreferHeader(prefer).return=='minimal')
+    };	
+	
 	router.get('*',async function get(req,res,next){/*
 			when no query string is provided, a single item identified solely by the url path is returned,
 			when a query string is provided by the request, it is used as filter and the method returns the list of matching items
@@ -201,6 +207,13 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				};
 				if(req.method=='HEAD'){
 					writeStatusAndHeaders(res,200,Object.assign({'content-type':'application/json'},lastModified.header)).end();	
+				}else
+				if(reqPrefersMinimal(req)){//you never know... somebody wants to confirm the uri
+					//send 204
+					writeStatusAndHeaders(res,204,Object.assign({
+							'Preference-Applied':'return=minimal',
+							'Location'		:req.originalUrl,								
+					},lastModified.header)).end();
 				}else{
 					const ret=Array.isArray(dest)?dest.filter(x=>x!==null):dest;
 					if(query){
@@ -267,11 +280,6 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 			writeStatusAndHeaders(res,500, error.message).end();//we assume that authorized users can see error.message		
 		}
 	});
-    
-    const parsePrefersHeader=(prefers)=>Object.fromEntries((prefers||'').split(/,\s*/).map(p=>p.split(/=\s*/)).filter(x=>x[0]));
-    const reqPrefersMinimal=(req,prefers=req.get('prefer'))=>{
-        return prefers && (parsePrefersHeader(prefers).return=='minimal')
-    };
     
 	router.put('*',async function put(req,res){/**
 			As defined in the rfc https://www.rfc-editor.org/rfc/rfc9110#section-9.3.4 
