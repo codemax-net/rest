@@ -86,11 +86,12 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 		@param datasetValidator	Validator function of the form (value)=>dataOk?0:'error string' , or alternatively a jpath value test pattern		
 		@return an object(not an express router) which implements the CRUD REST operations based on the provided dataset
 	*/
+	console.log(fileStorage.metadata,fileStorage.lastModified);
 	const err412=(req)=>`The storage of "${req.path}" was modified by another user. Refresh and try again.`;
 	var backupDataset=structuredClone(dataset);
 	const lastModified=({//Locally maintained modification timestamp
-		update(){
-			this.value=new Date();
+		update(useFileStorageTimestamp){
+			this.value=new Date(useFileStorageTimestamp && fileStorage.lastModified);
 			this.value.setMilliseconds(0);
 			this.header={'Last-Modified':this.value.toGMTString()};
 			return this;
@@ -104,7 +105,7 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 				return false;
 			}	
 		}
-	}).update();
+	}).update(true);
 	
 	const validate=function(throwError,req){/**
 			Validates the currest state of the dataset, 
