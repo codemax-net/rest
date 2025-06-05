@@ -91,9 +91,12 @@ const makeJsonRestService=function(fileStorage,dataset,datasetValidator,rootPath
 	var backupDataset=structuredClone(dataset);
 	const lastModified=({//Locally maintained modification timestamp
 		update(useFileStorageTimestamp){
-			this.value=new Date(useFileStorageTimestamp && fileStorage.lastModified);
+			this.value=(useFileStorageTimestamp && fileStorage.lastModified)?new Date(fileStorage.lastModified):new Date();
 			this.value.setMilliseconds(0);
-			this.header={'Last-Modified':this.value.toGMTString()};
+			this.header={
+				'Last-Modified':this.value.toGMTString(),
+				'x-fs-last-modified': `${fileStorage.lastModified}`
+			};
 			return this;
 		},
 		validate(req,res){
