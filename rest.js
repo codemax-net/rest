@@ -563,13 +563,17 @@ module.exports=async function(fileStorage,datasetValidator,rootPath='',initDatas
 	*/
 	datasetValidator=jpath.valueTest(datasetValidator);//if the provided datasetValidator is a function then keep it, otherwise treat it as a jpath value test
 	const rawData=await fileStorage.loadData();
-	const dataset=rawData?JSON.parse(rawData):initDataset;
+	let dataset=rawData?JSON.parse(rawData):initDataset;
 	if(!rawData){
 		console.log('file storage empty, initializing dataset as',initDataset);
 	}
 	const error=datasetValidator(dataset);
 	if(!error){
 		console.log('dataset',fileStorage.name,'contains valid data');
+	}else
+	if((typeof error=='object')&&(!datasetValidator(error))){
+		console.log('dataset',fileStorage.name,'upgraded');
+		dataset=error;
 	}else{
 		console.log('dataset',fileStorage.name,'contains INVALID data!');		
 		console.error(error);

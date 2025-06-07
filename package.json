@@ -1,6 +1,6 @@
 {
   "name": "@codemax/rest",
-  "version": "1.4.2",
+  "version": "1.4.4",
   "description": "json based REST services",
   "main": "rest.js",
   "scripts": {
