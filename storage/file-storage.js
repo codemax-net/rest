@@ -25,6 +25,8 @@
 	Rundimental!!! use only for testing on local host
 */
 const fs  = require('fs');
+const tsRx=/T|\:|\-/g;
+const dateToTimestampStr=(date)=>(date??new Date()).toISOString().substr(0,19).replace(tsRx,'');
 module.exports=(path,readopt={},writeopt={flag:'w+'})=>({//storage	
 	name:(()=>{
 		return path;
@@ -42,14 +44,20 @@ module.exports=(path,readopt={},writeopt={flag:'w+'})=>({//storage
 	},
 	saveData:async function(data,ifGenerationMatch=true,metadata=undefined){
 		return new Promise((resolve,reject)=>{
-			fs.writeFile(path,data,writeopt||{},(err)=>{
+			fs.rename(path,`${path}.${dateToTimestampStr()}`,(err)=>{
 				if(err){
 					reject(err);
 				}else{
-					resolve(true);
+					fs.writeFile(path,data,writeopt||{},(err)=>{
+						if(err){
+							reject(err);
+						}else{
+							resolve(true);
+						}
+					})
 				}
-			})
+			});			
 		})
 		this.data=Buffer.from(data);	
 	},
-});	
+});
