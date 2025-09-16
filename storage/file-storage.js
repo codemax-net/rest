@@ -58,6 +58,8 @@ module.exports=(path,readopt={},writeopt={flag:'w+'})=>({//storage
 				}
 			});			
 		})
-		this.data=Buffer.from(data);	
+		this.data=Buffer.from(data);
+		this.lastModified=new Date();
 	},
-});
+	lastModified:new Date()
+});	
