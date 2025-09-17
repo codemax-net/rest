@@ -26,8 +26,11 @@
 */
 const fs  = require('fs');
 const tsRx=/T|\:|\-/g;
-const dateToTimestampStr=(date)=>(date??new Date()).toISOString().substr(0,19).replace(tsRx,'');
-module.exports=(path,readopt={},writeopt={flag:'w+'})=>({//storage	
+const dateToTimestampStr=(date,backupFreq)=>(date??new Date()).toISOString().substr(0,19).replace(tsRx,'').substr(0,4+backupFreq*2);
+/**
+	backupFreq:	0:yearly, 1:monthly, 2:daily, 3:hour, 4:min, 5:sec
+**/
+module.exports=(path,readopt={},writeopt={flag:'w+'},backupFreq=3)=>({//storage	
 	name:(()=>{
 		return path;
 	})(),
@@ -44,22 +47,22 @@ module.exports=(path,readopt={},writeopt={flag:'w+'})=>({//storage
 	},
 	saveData:async function(data,ifGenerationMatch=true,metadata=undefined){
 		return new Promise((resolve,reject)=>{
-			fs.rename(path,`${path}.${dateToTimestampStr()}`,(err)=>{
+			const bkname=`${path}.${dateToTimestampStr(new Date(),backupFreq)}`;
+			fs.rename(path,bkname,(err)=>{
 				if(err){
-					reject(err);
-				}else{
-					fs.writeFile(path,data,writeopt||{},(err)=>{
-						if(err){
-							reject(err);
-						}else{
-							resolve(true);
-						}
-					})
-				}
+					console.log('cannot make backup ',bkname);
+				};
+				fs.writeFile(path,data,writeopt||{},(err)=>{
+					if(err){
+						reject(err);
+					}else{
+						//this.data=Buffer.from(data);
+						this.lastModified=new Date();							
+						resolve(true);
+					}
+				});
 			});			
-		})
-		this.data=Buffer.from(data);
-		this.lastModified=new Date();
+		});		
 	},
 	lastModified:new Date()
 });	
